@@ -3,6 +3,10 @@
 #include <iostream>
 #include <vector>
 
+double randWeight() {
+  return ((double)rand() / RAND_MAX) * 2.0 - 1.0; // Range [-1, 1]
+}
+
 class LinearLayer {
 public:
   std::vector<double> bias;
@@ -16,15 +20,15 @@ public:
 
   LinearLayer(size_t input_dim, size_t output_dim)
       : input_size(input_dim), output_size(output_dim) {
-    weight.resize(output_size, std::vector<double>(input_size));
-    bias.resize(output_size);
-    output.resize(output_size);
-    deltas.resize(output_size);
-    input.resize(input_size);
-    for (size_t i = 0; i < output_size; ++i) {
-      bias[i] = 0.1;
-      for (size_t j = 0; j < input_size; ++j) {
-        weight[i][j] = 0.1;
+    weight.resize(output_dim, std::vector<double>(input_dim));
+    bias.resize(output_dim);
+    output.resize(output_dim);
+    deltas.resize(output_dim);
+    input.resize(input_dim);
+    for (size_t i = 0; i < output_dim; ++i) {
+      bias[i] = randWeight();
+      for (size_t j = 0; j < input_dim; ++j) {
+        weight[i][j] = randWeight();
       }
     }
   }
@@ -111,7 +115,7 @@ public:
         // Backpropagation
         layers.back().computeDeltas(y[i]); // Output layer
 
-        for (size_t l = layers.size() - 2; l >= 0; --l) {
+        for (int l = (int)layers.size() - 2; l >= 0; --l) {
           layers[l].computeDeltas(layers[l + 1].deltas, layers[l + 1].weight);
         }
 
@@ -128,18 +132,17 @@ public:
 };
 
 int main(int argc, char **argv) {
-  auto mlp = MLP({4, 3, 1});
-  std::vector<std::vector<double>> INPUTS = {
-      {1.0, 0.0, 1.0, 0.0},
-      {1.0, 0.0, 0.0, 0.0},
-      {1.0, 0.0, 0.0, 1.0},
-  };
-  std::vector<std::vector<double>> OUTPUTS = {
-      {1.0},
-      {0.0},
-      {0.0},
-  };
-  mlp.train(INPUTS, OUTPUTS, 10000, 0.01);
+  auto mlp = MLP({4, 3, 2});
+  std::vector<std::vector<double>> INPUTS = {{0, 0, 0, 0}, {0, 1, 0, 0}, {1, 0, 0, 0}, {1, 1, 0, 0}};
+  std::vector<std::vector<double>> OUTPUTS = {{0, 0}, {0, 1}, {1, 0}, {1, 1}};
+
+  mlp.train(INPUTS, OUTPUTS, 100000, 0.01);
+
+  for (const auto &input : INPUTS) {
+    std::vector<double> out = mlp.forward(input);
+    std::cout << "Input: (" << input[0] << ", " << input[1]
+         << ") => Output: " << out[0] <<" " << out[1] << std::endl;
+  }
 
   return 0;
 }
