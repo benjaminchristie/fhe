@@ -3,7 +3,8 @@ project(he_nn)
 
 set(CMAKE_CXX_FLAGS "-O3 -Wall -Werror -fopenmp -Wno-parentheses")
 set(CMAKE_CXX_STANDARD 17)
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE) 
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE) 
+set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 include(ExternalProject)
 set(EXTERNAL_INSTALL_LOCATION ${CMAKE_BINARY_DIR}/external)
@@ -31,3 +32,10 @@ link_directories(${EXTERNAL_INSTALL_LOCATION}/lib)
 add_executable(FirstTest src/main.cpp)
 add_dependencies(FirstTest openfhe-development)
 target_link_libraries(FirstTest PUBLIC OPENFHEpke_static OPENFHEcore_static)
+
+add_library(HFENN src/fhenn.cpp)
+target_include_directories(HFENN PUBLIC include)
+
+add_executable(HFENN_test src/tests/fhenn.cpp)
+target_include_directories(HFENN_test PUBLIC include)
+target_link_libraries(HFENN_test PUBLIC HFENN)

@@ -1,0 +1,16 @@
+cmake_minimum_required(VERSION 3.25)
+project(nn_from_scratch)
+
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+add_compile_options(-O3 
+    -Wall -Werror -Wpedantic -Wextra 
+    -Wconversion -Wdouble-promotion -Wno-unused-parameter -Wno-sign-conversion 
+    -fsanitize=address,undefined
+)
+
+add_library(NN SHARED 
+    src/nn/nn_functionals.cpp
+    src/nn/nn_classes.cpp
+)
+target_include_directories(NN PRIVATE include)

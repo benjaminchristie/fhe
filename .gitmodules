@@ -1,0 +1,3 @@
+[submodule "fhe_transpiler"]
+	path = fhe_transpiler
+	url = https://github.com/google/fully-homomorphic-encryption.git
