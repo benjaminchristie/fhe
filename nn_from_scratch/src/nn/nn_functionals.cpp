@@ -1,5 +1,8 @@
 #include "nn.h"
-
+/*
+note that the functional versions listed below are *not* equivalent
+to their pytorch counterparts. these are polyomial approximations
+*/
 namespace F {
 
 double random_weight() noexcept { return ((double)rand() / RAND_MAX) * 2 - 1; }
@@ -100,19 +103,25 @@ double Identity::derivative(double x) noexcept {
   // remove unused parameter warning
   return 1.0;
 }
-double ReLU::forward(double x) noexcept { return x > 0.0 ? x : 0.0; }
-double ReLU::derivative(double x) noexcept { return x > 0.0 ? 1.0 : 0.0; }
+double ReLU::forward(double x) noexcept {
+  return 0.47 + 0.50 * x + 0.09 * x * x;
+}
+double ReLU::derivative(double x) noexcept { return 0.5 + 2 * 0.09 * x; }
+double Tanh::derivative(double x) noexcept {
+  auto y = std::tanh(x);
+  return 1.0 - y * y;
+}
 double Sigmoid::forward(double x) noexcept {
-  return 1.0 / (1.0 + std::exp(-x));
+  return 0.5 + x / 4.0 - (x * x * x) / 48.0 + (x * x * x * x * x) / 480.0;
 }
 double Sigmoid::derivative(double x) noexcept {
-  auto y = forward(x);
-  return y * (1.0 - y);
+  return 1.0 / 4.0 - (x * x) / (48.0 / 3.0) + (x * x * x * x) / (480.0 / 5.0);
 }
-double Tanh::forward(double x) noexcept { return std::tanh(x); }
-double Tanh::derivative(double x) noexcept {
-  auto y = forward(x);
-  return 1.0 - y * y;
+double Tanh::forward(double x) noexcept {
+  auto x3 = x * x * x;
+  auto x5 = x3 * x * x;
+  auto result = x + x3 * (-1.0 / 3.0) + x5 * (2.0 / 15.0);
+  return result;
 }
 
 } // namespace F

@@ -16,6 +16,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wdouble-promotion -Wno-sign-conversion"
 
 message(STATUS "CXX Flags are ${CMAKE_CXX_FLAGS}")
 
+find_package(OpenMP REQUIRED)
 
 include(ExternalProject)
 set(EXTERNAL_INSTALL_LOCATION ${CMAKE_BINARY_DIR}/external)
@@ -49,14 +50,25 @@ add_library(NN SHARED
 target_include_directories(NN PUBLIC include)
 target_compile_options(NN PRIVATE -Wextra -Wpedantic -Wunused-parameter)
 
-find_package(OpenMP REQUIRED)
-# add_library(NNFHE SHARED 
-#     src/nn_fhe/nn_functionals.cpp
-#     src/nn_fhe/nn_classes.cpp
-# )
-# add_dependencies(NNFHE openfhe-development)
-add_executable(NNFHE 
+add_executable(Example 
     src/example.cpp
+)
+add_dependencies(Example openfhe-development)
+target_include_directories(Example PUBLIC include)
+target_include_directories(Example PUBLIC ${OPENMP_DIRECTORIES})
+target_include_directories(Example PUBLIC ${EXTERNAL_INSTALL_LOCATION}/include/openfhe/)
+target_include_directories(Example PUBLIC ${EXTERNAL_INSTALL_LOCATION}/include/openfhe/pke)
+target_include_directories(Example PUBLIC ${EXTERNAL_INSTALL_LOCATION}/include/openfhe/core)
+target_include_directories(Example PUBLIC ${EXTERNAL_INSTALL_LOCATION}/include/openfhe/binfhe)
+target_include_directories(Example PUBLIC ${EXTERNAL_INSTALL_LOCATION}/include/openfhe/cereal)
+target_include_directories(Example PUBLIC ${EXTERNAL_INSTALL_LOCATION}/include/openfhe/third-party/include)
+target_link_directories(Example PUBLIC ${EXTERNAL_INSTALL_LOCATION}/lib)
+target_link_directories(Example PUBLIC ${OPENMP_LIBRARIES})
+target_link_libraries(Example PUBLIC OPENFHEpke_static OPENFHEcore_static OPENFHEbinfhe_static OpenMP::OpenMP_CXX)
+
+add_library(NNFHE SHARED 
+    src/nn_fhe/nn_functionals.cpp
+    src/nn_fhe/nn_classes.cpp
 )
 add_dependencies(NNFHE openfhe-development)
 target_include_directories(NNFHE PUBLIC include)
@@ -69,13 +81,13 @@ target_include_directories(NNFHE PUBLIC ${EXTERNAL_INSTALL_LOCATION}/include/ope
 target_include_directories(NNFHE PUBLIC ${EXTERNAL_INSTALL_LOCATION}/include/openfhe/third-party/include)
 target_link_directories(NNFHE PUBLIC ${EXTERNAL_INSTALL_LOCATION}/lib)
 target_link_directories(NNFHE PUBLIC ${OPENMP_LIBRARIES})
-target_link_libraries(NNFHE PUBLIC OPENFHEpke_static OPENFHEcore_static OPENFHEbinfhe_static OpenMP::OpenMP_CXX)
+target_link_libraries(NNFHE PUBLIC NN OPENFHEpke_static OPENFHEcore_static OPENFHEbinfhe_static OpenMP::OpenMP_CXX)
 # target_compile_options(NNFHE PRIVATE -Wextra -Wpedantic -Wunused-parameter)
 
 add_executable(MyTest src/main.cpp)
 target_link_libraries(MyTest NN)
 target_include_directories(MyTest PUBLIC include)
 
-# add_executable(MyTest_FHE src/main_fhe.cpp)
-# target_link_libraries(MyTest_FHE NNFHE)
-# target_include_directories(MyTest_FHE PUBLIC include)
+add_executable(MyTest_FHE src/main_fhe.cpp)
+target_link_libraries(MyTest_FHE NNFHE)
+target_include_directories(MyTest_FHE PUBLIC include)

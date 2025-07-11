@@ -1,6 +1,6 @@
 #include "nn_fhe.h"
 
-namespace F {
+namespace F_fhe {
 
 double random_weight() noexcept { return ((double)rand() / RAND_MAX) * 2 - 1; }
 
@@ -77,42 +77,95 @@ std::vector<double> scalar_sub(std::vector<double> a, double s) noexcept {
   return v;
 }
 
-double Functional::forward(double x) noexcept { return x; }
-double Functional::derivative(double x) noexcept { return x; }
+FunctionalCiphertext Functional::forward(FunctionalCiphertext x) noexcept {
+  return x;
+}
+FunctionalCiphertext Functional::derivative(FunctionalCiphertext x) noexcept {
+  return x;
+}
 
-std::vector<double> Functional::forward(std::vector<double> x) noexcept {
-  std::vector<double> y(x.size());
+std::vector<FunctionalCiphertext>
+Functional::forward(std::vector<FunctionalCiphertext> x) noexcept {
+  std::vector<FunctionalCiphertext> y(x.size());
   std::transform(x.begin(), x.end(), y.begin(),
-                 [&](double val) { return forward(val); });
+                 [&](FunctionalCiphertext val) { return forward(val); });
   return y;
 }
 
-std::vector<double> Functional::derivative(std::vector<double> x) noexcept {
-  std::vector<double> y(x.size());
+std::vector<FunctionalCiphertext>
+Functional::derivative(std::vector<FunctionalCiphertext> x) noexcept {
+  std::vector<FunctionalCiphertext> y(x.size());
   std::transform(x.begin(), x.end(), y.begin(),
-                 [&](double val) { return derivative(val); });
+                 [&](FunctionalCiphertext val) { return derivative(val); });
   return y;
 }
 
-double Identity::forward(double x) noexcept { return x; }
-double Identity::derivative(double x) noexcept {
-  (void)x;
-  // remove unused parameter warning
-  return 1.0;
+FunctionalCiphertext Identity::forward(FunctionalCiphertext x) noexcept {
+  return x;
 }
-double ReLU::forward(double x) noexcept { return x > 0.0 ? x : 0.0; }
-double ReLU::derivative(double x) noexcept { return x > 0.0 ? 1.0 : 0.0; }
-double Sigmoid::forward(double x) noexcept {
-  return 1.0 / (1.0 + std::exp(-x));
+FunctionalCiphertext Identity::derivative(FunctionalCiphertext x) noexcept {
+  auto zero = cc->EvalSub(x, x);
+  auto result = cc->EvalAdd(zero, 1.0);
+  return result;
 }
-double Sigmoid::derivative(double x) noexcept {
-  auto y = forward(x);
-  return y * (1.0 - y);
+FunctionalCiphertext ReLU::forward(FunctionalCiphertext x) noexcept {
+  // see https://arxiv.org/pdf/2011.05530
+  auto x_squared = cc->EvalSquare(x);
+  auto result = cc->EvalAdd(x_squared, x);
+  return result;
 }
-double Tanh::forward(double x) noexcept { return std::tanh(x); }
-double Tanh::derivative(double x) noexcept {
-  auto y = forward(x);
-  return 1.0 - y * y;
+FunctionalCiphertext ReLU::derivative(FunctionalCiphertext x) noexcept {
+  auto mult = cc->EvalMult(x, 2.0);
+  auto result = cc->EvalAdd(mult, 1.0);
+  return result;
+}
+FunctionalCiphertext Sigmoid::forward(FunctionalCiphertext x) noexcept {
+  // taylor expansion centered at 0 with O(5) terms
+  auto x_2 = cc->EvalSquare(x);
+  auto x_3 = cc->EvalMult(x, x_2);
+  auto x_5 = cc->EvalMult(x_3, x_2);
+  auto t1 = static_cast<double>(0.5);
+  auto t2 = cc->EvalMult(x, static_cast<double>(0.25));
+  auto t3 = cc->EvalMult(x_3, static_cast<double>(-1.0 / 48.0));
+  auto t4 = cc->EvalMult(x_5, static_cast<double>(1.0 / 480.0));
+  auto result = cc->EvalAdd(t1, t2);
+  result = cc->EvalAdd(t3, result);
+  result = cc->EvalAdd(t4, result);
+  return result;
+}
+FunctionalCiphertext Sigmoid::derivative(FunctionalCiphertext x) noexcept {
+  // derivative of taylor expansion centered at 0 with O(5) terms
+  auto x_2 = cc->EvalSquare(x);
+  auto x_4 = cc->EvalSquare(x_2);
+  auto t1 = static_cast<double>(0.25);
+  auto t2 = cc->EvalMult(x_2, static_cast<double>(-1.0 / (48.0 / 3.0)));
+  auto t3 = cc->EvalMult(x_4, static_cast<double>(1.0 / (480.0 / 5.0)));
+  auto result = cc->EvalAdd(t1, t2);
+  result = cc->EvalAdd(t3, result);
+  return result;
+}
+FunctionalCiphertext Tanh::forward(FunctionalCiphertext x) noexcept {
+  // taylor expansion centered at 0 with O(5) terms
+  auto x_2 = cc->EvalSquare(x);
+  auto x_3 = cc->EvalMult(x, x_2);
+  auto x_5 = cc->EvalMult(x_3, x_2);
+  auto t1 = x;
+  auto t2 = cc->EvalMult(x_3, static_cast<double>(-1.0 / 3.0));
+  auto t3 = cc->EvalMult(x_5, static_cast<double>(2.0 / 15.0));
+  auto result = cc->EvalAdd(t1, t2);
+  result = cc->EvalAdd(result, t3);
+  return result;
+}
+FunctionalCiphertext Tanh::derivative(FunctionalCiphertext x) noexcept {
+  // derivative of taylor expansion centered at 0 with O(5) terms
+  auto x_2 = cc->EvalSquare(x);
+  auto x_4 = cc->EvalSquare(x_2);
+  auto t1 = static_cast<double>(1.0);
+  auto t2 = cc->EvalMult(x_2, static_cast<double>(-1.0));
+  auto t3 = cc->EvalMult(x_4, static_cast<double>(2.0 / 3.0));
+  auto result = cc->EvalAdd(t1, t2);
+  result = cc->EvalAdd(t3, result);
+  return result;
 }
 
-} // namespace F
+} // namespace F_fhe

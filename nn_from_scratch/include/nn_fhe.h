@@ -1,5 +1,6 @@
 #pragma once
 
+#include "nn.h"
 #include "openfhe.h"
 #include <algorithm>
 #include <array>
@@ -9,6 +10,8 @@
 #include <memory>
 #include <vector>
 
+// see https://openreview.net/pdf?id=rkxsgkHKvH
+
 typedef lbcrypto::Ciphertext<lbcrypto::DCRTPolyImpl<
     bigintdyn::mubintvec<bigintdyn::ubint<unsigned long>>>>
     FunctionalCiphertext;
@@ -17,6 +20,7 @@ namespace F_fhe {
 
 class Functional {
 public:
+  lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc;
   virtual FunctionalCiphertext forward(FunctionalCiphertext x) noexcept = 0;
   virtual FunctionalCiphertext derivative(FunctionalCiphertext x) noexcept = 0;
   std::vector<FunctionalCiphertext>
@@ -81,25 +85,22 @@ private:
   std::vector<double> bias;
   std::vector<FunctionalCiphertext> input;
   std::vector<FunctionalCiphertext> output;
-  std::vector<double> deltas;
+  lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc;
 
 public:
+  // LinearLayer is not copyable (implicitly deleted due to unique_ptr member)
   LinearLayer(LinearLayer &&other) noexcept = default;
   LinearLayer &operator=(LinearLayer &&other) noexcept = delete;
-
-  // LinearLayer is not copyable (implicitly deleted due to unique_ptr member)
   LinearLayer(const LinearLayer &other) = delete;
   LinearLayer &operator=(const LinearLayer &other) = delete;
 
-  void initialize_params();
-  void compute_deltas(const std::vector<double> &target_deltas,
-                      const std::vector<std::vector<double>> &next_weights);
-  void update_weights(double learning_rate);
-
-  LinearLayer(size_t input_size, size_t output_size);
   LinearLayer(size_t input_size, size_t output_size,
-              std::unique_ptr<F_fhe::Functional> f);
-  std::vector<double> forward(const std::vector<double> &input);
+              lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc);
+  LinearLayer(size_t input_size, size_t output_size,
+              std::unique_ptr<F_fhe::Functional> f,
+              lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc);
+  std::vector<FunctionalCiphertext>
+  forward(const std::vector<FunctionalCiphertext> &input);
   friend class MLP;
 };
 class MLP {
@@ -107,13 +108,13 @@ private:
   std::vector<LinearLayer> layers; // with activation
 
 public:
-  MLP(const std::vector<size_t> &sizes);
   MLP(const std::vector<size_t> &sizes,
-      std::vector<std::unique_ptr<F_fhe::Functional>> &functionals);
+      lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc);
+  MLP(const std::vector<size_t> &sizes,
+      std::vector<std::unique_ptr<F_fhe::Functional>> &functionals,
+      lbcrypto::CryptoContext<lbcrypto::DCRTPoly> cc);
   std::vector<FunctionalCiphertext>
   forward(const std::vector<FunctionalCiphertext> &input);
-  double update(const std::vector<FunctionalCiphertext> &input,
-                const std::vector<FunctionalCiphertext> &target,
-                const double learning_rate);
+  void set_parameters(nn::MLP &source);
 };
 } // namespace nn_fhe

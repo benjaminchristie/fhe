@@ -1,14 +1,11 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
-#include <functional>
 #include <iostream>
-#include <system_error>
 #include <vector>
 
-#include "ciphertext-fwd.h"
-#include "lattice/hal/lat-backend.h"
 #include "openfhe.h"
+#include <chrono>
 
 using namespace std;
 using namespace lbcrypto;
@@ -239,25 +236,92 @@ public:
   }
 };
 
+#define INPUT_DIM 4
+#define OUTPUT_DIM 2
+
+double random_weight(const double min, const double max) noexcept {
+  return ((double)rand() / RAND_MAX) * (max - min) + min;
+}
+
+std::pair<std::vector<std::vector<double>>, std::vector<std::vector<double>>>
+make_data(size_t N_SAMPLES) {
+
+  const size_t N_ACTIONS = 100;
+  std::vector<std::vector<double>> inputs(N_SAMPLES,
+                                          std::vector<double>(INPUT_DIM));
+  std::vector<std::vector<double>> outputs(N_SAMPLES,
+                                           std::vector<double>(OUTPUT_DIM));
+  std::vector<std::vector<double>> action_samples(
+      N_ACTIONS, std::vector<double>(OUTPUT_DIM));
+
+  for (size_t i = 0; i < N_ACTIONS; i++) {
+    for (size_t j = 0; j < OUTPUT_DIM; j++) {
+      action_samples[i][j] = random_weight(-1.0, 1.0);
+    }
+  }
+  for (size_t i = 0; i < N_SAMPLES; i++) {
+    for (size_t j = 0; j < INPUT_DIM; j++) {
+      inputs[i][j] = random_weight(-1.0, 1.0);
+    }
+    size_t best_j = 0;
+    double best_dist = 1000000.0;
+    for (size_t j = 0; j < N_ACTIONS; j++) {
+      std::vector<double> dist(2);
+      dist[0] = inputs[i][0] + action_samples[j][0] - inputs[i][2];
+      dist[1] = inputs[i][1] + action_samples[j][1] - inputs[i][3];
+      auto norm = std::accumulate(dist.begin(), dist.end(), 0.0,
+                                  [](double a, double b) { return a + b * b; });
+      if (norm < best_dist) {
+        best_dist = norm;
+        best_j = j;
+      }
+    }
+    outputs[i] = action_samples[best_j];
+  }
+  return {inputs, outputs};
+}
+
 int main() {
   srand(time(0));
 
   // Example: 2 inputs → 2 hidden → 1 output
-  NeuralNetwork nn({2, 3, 2});
+  std::vector<int> layer_szs = {INPUT_DIM, 3, OUTPUT_DIM};
+  NeuralNetwork nn(layer_szs);
 
-  vector<vector<double>> X = {{0, 0}, {0, 1}, {1, 0}, {1, 1}};
+  auto [X, Y] = make_data(1000);
 
-  vector<vector<double>> y = {{0, 0}, {1, 1}, {0, 0}, {1, 1}};
+  std::chrono::steady_clock::time_point begin =
+      std::chrono::steady_clock::now();
+  nn.train(X, Y, 10000, 0.001);
+  std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 
-  nn.train(X, y, 10000, 0.5);
+  cout << "Training took : "
+       << std::chrono::duration_cast<std::chrono::microseconds>(end - begin)
+              .count()
+       << "μs\n";
 
+  X.resize(10);
+  begin = std::chrono::steady_clock::now();
   for (const auto &input : X) {
     vector<double> out = nn.predict(input);
-    cout << "Input: (" << input[0] << ", " << input[1]
-         << ") => Output: " << out[0] << " " << out[1] << endl;
+    cout << "Input: (";
+    for (const auto &in : input) {
+      cout << in << ", ";
+    }
+    cout << ") => Output: (";
+    for (const auto &ou : out) {
+      cout << ou << ", ";
+    }
+    cout << ")\n";
   }
+  end = std::chrono::steady_clock::now();
 
-  uint32_t multDepth = 16;
+  cout << "Standard inference took : "
+       << std::chrono::duration_cast<std::chrono::microseconds>(end - begin)
+              .count()
+       << "μs\n";
+
+  uint32_t multDepth = 10;
   uint32_t scaleModSize = 50;
   uint32_t batchSize = 1;
 
@@ -269,18 +333,18 @@ int main() {
   cc->Enable(PKE);
   cc->Enable(KEYSWITCH);
   cc->Enable(LEVELEDSHE);
-  std::cout << "CKKS scheme is using ring dimension " << cc->GetRingDimension()
-            << std::endl
-            << std::endl;
+  std::cout << "\nCKKS scheme is using ring dimension "
+            << cc->GetRingDimension() << std::endl;
   auto keys = cc->KeyGen();
   cc->EvalMultKeyGen(keys.secretKey);
   cc->EvalRotateKeyGen(keys.secretKey, {1, -2});
-  FHENeuralNetwork fhenn = FHENeuralNetwork({2, 3, 2}, cc);
+  FHENeuralNetwork fhenn = FHENeuralNetwork(layer_szs, cc);
   for (size_t i = 0; i < fhenn.layers.size(); i++) {
     fhenn.layers[i].weights = nn.layers[i].weights;
     fhenn.layers[i].biases = nn.layers[i].biases;
   }
   std::cout << "beginning encrypted inference\n";
+  begin = std::chrono::steady_clock::now();
   for (const auto &input : X) {
     vector<FunctionalCiphertext> vs(input.size());
     size_t i = 0;
@@ -291,16 +355,27 @@ int main() {
       vs[i++] = encrypted_input;
     }
     auto encrypted_output = fhenn.predict(vs, keys.publicKey);
-    cout << "Input: (" << input[0] << ", " << input[1] << ") => Output: ";
+    cout << "Input: (";
+    for (const auto &in : input) {
+      cout << in << ", ";
+    }
+    cout << ") => Output: (";
     for (auto out : encrypted_output) {
       Plaintext result;
       cc->Decrypt(keys.secretKey, out, &result);
       result->SetLength(batchSize);
       auto vec = result->GetCKKSPackedValue();
-      cout << vec[0].real() << " ";
+      cout << vec[0].real() << ", ";
     }
-    cout << endl;
+    cout << ")\n";
   }
+
+  end = std::chrono::steady_clock::now();
+
+  cout << "\nFHE inference took : "
+       << std::chrono::duration_cast<std::chrono::microseconds>(end - begin)
+              .count()
+       << "μs\n";
 
   return 0;
 }
