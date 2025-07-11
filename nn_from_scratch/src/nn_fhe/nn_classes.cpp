@@ -1,9 +1,9 @@
-#include "nn.h"
+#include "nn_fhe.h"
 
-namespace nn {
+namespace nn_fhe {
 
 LinearLayer::LinearLayer(size_t input_size, size_t output_size,
-                         std::unique_ptr<F::Functional> fu)
+                         std::unique_ptr<F_fhe::Functional> fu)
     : LinearLayer::LinearLayer(input_size, output_size) {
   f = std::move(fu);
 }
@@ -16,12 +16,12 @@ LinearLayer::LinearLayer(size_t input_size, size_t output_size)
   deltas.resize(output_size);
   input.resize(input_size);
   for (size_t i = 0; i < output_size; i++) {
-    bias[i] = F::random_weight();
+    bias[i] = F_fhe::random_weight();
     for (size_t j = 0; j < input_size; j++) {
-      weight[i][j] = F::random_weight();
+      weight[i][j] = F_fhe::random_weight();
     }
   }
-  f = std::make_unique<F::Identity>();
+  f = std::make_unique<F_fhe::Identity>();
 }
 
 std::vector<double> LinearLayer::forward(const std::vector<double> &x) {
@@ -64,11 +64,6 @@ void LinearLayer::update_weights(double learning_rate) {
   }
 }
 
-std::pair<std::vector<std::vector<double>>, std::vector<double>>
-LinearLayer::get_parameters() {
-  return {weight, bias};
-}
-
 MLP::MLP(const std::vector<size_t> &sizes) {
   for (size_t i = 1; i < sizes.size(); i++) {
     layers.emplace_back(sizes[i - 1], sizes[i],
@@ -109,18 +104,4 @@ double MLP::update(const std::vector<double> &input,
   return total_loss;
 }
 
-std::pair<std::vector<std::vector<std::vector<double>>>,
-          std::vector<std::vector<double>>>
-MLP::get_parameters() {
-  std::vector<std::vector<std::vector<double>>> v(layers.size());
-  std::vector<std::vector<double>> b(layers.size());
-  for (size_t i = 0; auto &layer : layers) {
-    auto [vv, bb] = layer.get_parameters();
-    v[i] = vv; // perform an expensive copy
-    b[i] = bb;
-    i++;
-  }
-  return {v, b};
-}
-
-} // namespace nn
+} // namespace nn_fhe

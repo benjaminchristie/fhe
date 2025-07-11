@@ -1,4 +1,4 @@
-#include "nn.h"
+#include "nn_fhe.h"
 
 namespace F {
 

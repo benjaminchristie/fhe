@@ -55,15 +55,6 @@ std::vector<double> scalar_sub(std::vector<double> b, double s) noexcept;
 
 } // namespace F
 
-// namespace Optim {
-// class Optimizer {
-//   virtual void
-//   compute_deltas(const std::vector<double> &target_deltas,
-//                  const std::vector<std::vector<double>> &next_weights) = 0;
-//   virtual void update_weights(double learning_rate) = 0;
-// };
-// } // namespace Optim
-
 namespace nn {
 
 class LinearLayer {
@@ -95,7 +86,9 @@ public:
               std::unique_ptr<F::Functional> f);
   std::vector<double> forward(const std::vector<double> &input);
   friend class MLP;
-  // friend class Optim::Optimizer;
+
+  std::pair<std::vector<std::vector<double>>, std::vector<double>>
+  get_parameters();
 };
 class MLP {
 private:
@@ -108,5 +101,8 @@ public:
   std::vector<double> forward(const std::vector<double> &input);
   double update(const std::vector<double> &input,
                 const std::vector<double> &target, const double learning_rate);
+  std::pair<std::vector<std::vector<std::vector<double>>>, std::vector<std::vector<double>>>
+  get_parameters();
+  
 };
 } // namespace nn
