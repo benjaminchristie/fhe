@@ -56,6 +56,11 @@ std::vector<double> scalar_sub(std::vector<double> b, double s) noexcept;
 
 } // namespace F
 
+
+namespace Optim {
+  class Optimizer {};
+}
+
 namespace nn {
 
 
@@ -88,6 +93,7 @@ class LinearLayer {
                 std::unique_ptr<F::Functional> f);
     std::vector<double> forward(const std::vector<double>& input);
     friend class MLP;
+    friend class Optim::Optimizer;
 };
 class MLP {
   private:
@@ -103,3 +109,4 @@ class MLP {
                                const double learning_rate);
 };
 } // namespace nn
+
