@@ -62,13 +62,31 @@ make_data(size_t N_SAMPLES) {
     return {inputs, outputs};
 }
 
+void print_vec(const std::vector<double>& v) {
+    std::cout << " ( ";
+    for (size_t i = 0; i < v.size() - 1; i++) {
+        std::cout << v[i] << ", ";
+    }
+    std::cout << v[v.size() - 1] << " ) ";
+}
+
 int main() {
     srand(time(0));
-    std::vector<size_t> szs = {INPUT_DIM, 3, 3, OUTPUT_DIM};
-    std::vector<F::Activation> fs = {F::identity, F::identity, F::identity};
+    std::vector<size_t> szs = {INPUT_DIM, 4, 4, 3, OUTPUT_DIM};
+    std::vector<F::Activation> fs = {F::relu, F::relu, F::relu, F::identity};
     NN::MLP mlp(szs, fs);
     auto [INPUTS, OUTPUTS] = make_data(1000);
     std::cout << "Beginning training...\n";
     mlp.train(INPUTS, OUTPUTS, 10000, 0.001, true);
+    for (size_t i = 0; i < 10; i++) {
+        std::cout << "Input:";
+        print_vec(INPUTS[i]);
+        std::cout << "Predicted:";
+        auto v = mlp.forward(INPUTS[i]);
+        print_vec(v);
+        std::cout << "Output:";
+        print_vec(OUTPUTS[i]);
+        std::cout << std::endl;
+    }
     return 0;
 }

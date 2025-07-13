@@ -13,6 +13,9 @@
 #define DO_PARALLEL ;
 #endif
 
+#define NN_DO_INPLACE
+#define LSZ_WEIGHT_EXTENSION 256
+
 namespace utils {
 
 std::vector<double> vec_add(const std::vector<double>& a,
@@ -27,6 +30,27 @@ std::vector<double> vec_sub(double a, const std::vector<double>& b) noexcept;
 std::vector<double> vec_mult(const std::vector<double>& a,
                              const std::vector<double>& b) noexcept;
 std::vector<double> vec_mult(double a, const std::vector<double>& b) noexcept;
+
+double vec_dot(const std::vector<double>& a,
+               const std::vector<double>& b) noexcept;
+
+void vec_add_inplace(const std::vector<double>& a, const std::vector<double>& b,
+                     std::vector<double>& result) noexcept;
+void vec_add_inplace(const std::vector<double>& a, double b,
+                     std::vector<double>& result) noexcept;
+
+void vec_sub_inplace(const std::vector<double>& a, const std::vector<double>& b,
+                     std::vector<double>& result) noexcept;
+void vec_sub_inplace(const std::vector<double>& a, double b,
+                     std::vector<double>& result) noexcept;
+void vec_sub_inplace(double a, const std::vector<double>& b,
+                     std::vector<double>& result) noexcept;
+
+void vec_mult_inplace(const std::vector<double>& a,
+                      const std::vector<double>& b,
+                      std::vector<double>& result) noexcept;
+void vec_mult_inplace(double a, const std::vector<double>& b,
+                      std::vector<double>& result) noexcept;
 
 double vec_dot(const std::vector<double>& a,
                const std::vector<double>& b) noexcept;

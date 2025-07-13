@@ -2,65 +2,164 @@
 #include <cstddef>
 
 namespace utils {
-std::vector<double> vec_add(const std::vector<double>& a,
-                            const std::vector<double>& b) noexcept {
-    auto sz = a.size();
+inline std::vector<double> vec_add(const std::vector<double>& a,
+                                   const std::vector<double>& b) noexcept {
+    const size_t sz = a.size();
     assert(sz == b.size());
     std::vector<double> output(sz);
-    std::transform(a.begin(), a.end(), b.begin(), output.begin(),
-                   std::plus<double>());
+    for (size_t i = 0; i < sz; i++) {
+        output[i] = a[i] + b[i];
+    }
+    // std::transform(a.begin(), a.end(), b.begin(), output.begin(),
+    //                std::plus<double>());
     return output;
 }
-std::vector<double> vec_add(const std::vector<double>& a, double b) noexcept {
+inline std::vector<double> vec_add(const std::vector<double>& a,
+                                   double b) noexcept {
+    const size_t sz = a.size();
     auto output = a;
-    std::transform(a.begin(), a.end(), output.begin(),
-                   [b](double d) { return d + b; });
+    for (size_t i = 0; i < sz; i++) {
+        output[i] = a[i] + b;
+    }
+    // std::transform(a.begin(), a.end(), output.begin(),
+    //                [b](double d) { return d + b; });
     return output;
 }
 
-std::vector<double> vec_sub(const std::vector<double>& a,
-                            const std::vector<double>& b) noexcept {
-    auto sz = a.size();
+inline std::vector<double> vec_sub(const std::vector<double>& a,
+                                   const std::vector<double>& b) noexcept {
+    const size_t sz = a.size();
     assert(sz == b.size());
     std::vector<double> output(sz);
-    std::transform(a.begin(), a.end(), b.begin(), output.begin(),
-                   std::minus<double>());
+    for (size_t i = 0; i < sz; i++) {
+        output[i] = a[i] - b[i];
+    }
+    // std::transform(a.begin(), a.end(), b.begin(), output.begin(),
+    //                std::minus<double>());
     return output;
 }
-std::vector<double> vec_sub(const std::vector<double>& a, double b) noexcept {
+inline std::vector<double> vec_sub(const std::vector<double>& a,
+                                   double b) noexcept {
     auto output = a;
-    std::transform(a.begin(), a.end(), output.begin(),
-                   [b](double d) { return d - b; });
+    const size_t sz = output.size();
+    for (size_t i = 0; i < sz; i++) {
+        output[i] = a[i] - b;
+    }
+    // std::transform(a.begin(), a.end(), output.begin(),
+    //                [b](double d) { return d - b; });
     return output;
 }
-std::vector<double> vec_sub(double a, const std::vector<double>& b) noexcept {
+inline std::vector<double> vec_sub(double a,
+                                   const std::vector<double>& b) noexcept {
     auto output = b;
-    std::transform(b.begin(), b.end(), output.begin(),
-                   [a](double d) { return a - d; });
+    const size_t sz = output.size();
+    for (size_t i = 0; i < sz; i++) {
+        output[i] = a - b[i];
+    }
+    // std::transform(b.begin(), b.end(), output.begin(),
+    //    [a](double d) { return a - d; });
     return output;
 }
 
-std::vector<double> vec_mult(const std::vector<double>& a,
-                             const std::vector<double>& b) noexcept {
-    auto sz = a.size();
+inline std::vector<double> vec_mult(const std::vector<double>& a,
+                                    const std::vector<double>& b) noexcept {
+    const size_t sz = a.size();
     assert(sz == b.size());
     std::vector<double> output(sz);
-    std::transform(a.begin(), a.end(), b.begin(), output.begin(),
-                   [](double x, double y) { return x * y; });
+    for (size_t i = 0; i < sz; i++) {
+        output[i] = a[i] * b[i];
+    }
+    // std::transform(a.begin(), a.end(), b.begin(), output.begin(),
+    //                [](double x, double y) { return x * y; });
     return output;
 }
-std::vector<double> vec_mult(double a, const std::vector<double>& b) noexcept {
+inline std::vector<double> vec_mult(double a,
+                                    const std::vector<double>& b) noexcept {
     auto output = b;
-    std::transform(b.begin(), b.end(), output.begin(),
-                   [a](double d) { return a * d; });
+    const size_t sz = b.size();
+    for (size_t i = 0; i < sz; i++) {
+        output[i] = a * b[i];
+    }
+    // std::transform(b.begin(), b.end(), output.begin(),
+    //                [a](double d) { return a * d; });
     return output;
 }
 
-double vec_dot(const std::vector<double>& a,
-               const std::vector<double>& b) noexcept {
+inline double vec_dot(const std::vector<double>& a,
+                      const std::vector<double>& b) noexcept {
     assert(a.size() == b.size());
     double output = std::inner_product(a.begin(), a.end(), b.begin(), 0.0);
     return output;
+}
+
+/*
+warning: inplace operations skip assertions and resizing
+use at your own risk
+*/
+inline void vec_add_inplace(const std::vector<double>& a,
+                            const std::vector<double>& b,
+                            std::vector<double>& result) noexcept {
+    const size_t sz = a.size();
+    for (size_t i = 0; i < sz; i++) {
+        result[i] = a[i] + b[i];
+    }
+    return;
+}
+
+inline void vec_add_inplace(const std::vector<double>& a, double b,
+                            std::vector<double>& result) noexcept {
+    const size_t sz = a.size();
+    for (size_t i = 0; i < sz; i++) {
+        result[i] = a[i] + b;
+    }
+    return;
+}
+
+inline void vec_sub_inplace(const std::vector<double>& a,
+                            const std::vector<double>& b,
+                            std::vector<double>& result) noexcept {
+    const size_t sz = a.size();
+    for (size_t i = 0; i < sz; i++) {
+        result[i] = a[i] - b[i];
+    }
+    return;
+}
+
+inline void vec_sub_inplace(const std::vector<double>& a, double b,
+                            std::vector<double>& result) noexcept {
+    const size_t sz = a.size();
+    for (size_t i = 0; i < sz; i++) {
+        result[i] = a[i] - b;
+    }
+    return;
+}
+
+inline void vec_sub_inplace(double a, const std::vector<double>& b,
+                            std::vector<double>& result) noexcept {
+    const size_t sz = b.size();
+    for (size_t i = 0; i < sz; i++) {
+        result[i] = a - b[i];
+    }
+    return;
+}
+
+inline void vec_mult_inplace(const std::vector<double>& a,
+                             const std::vector<double>& b,
+                             std::vector<double>& result) noexcept {
+    const size_t sz = a.size();
+    for (size_t i = 0; i < sz; i++) {
+        result[i] = a[i] * b[i];
+    }
+    return;
+}
+
+inline void vec_mult_inplace(double a, const std::vector<double>& b,
+                             std::vector<double>& result) noexcept {
+    const size_t sz = b.size();
+    for (size_t i = 0; i < sz; i++) {
+        result[i] = a * b[i];
+    }
+    return;
 }
 
 double rand_double(double min, double max) noexcept {
@@ -108,6 +207,9 @@ double identity_derivative(double x) noexcept {
     return 1.0;
 }
 
+double relu(double x) noexcept { return x * (x > 0.0); }
+double relu_derivative(double x) noexcept { return 1.0 * (x > 0.0); }
+
 } // namespace F
 
 namespace NN {
@@ -119,7 +221,10 @@ LinearLayer::LinearLayer(size_t input_size, size_t output_size, F::Activation f)
               return F::sigmoid_derivative;
           } else if (f == F::identity) {
               return F::identity_derivative;
+          } else if (f == F::relu) {
+              return F::relu_derivative;
           } else {
+              assert(false);
               return F::identity_derivative; // i will explode!
           }
       }()),
@@ -131,7 +236,7 @@ void LinearLayer::initialize_params() noexcept {
     biases = std::vector<double>(output_size);
     weights = std::vector<std::vector<double>>(output_size,
                                                std::vector<double>(input_size));
-    // DO_PARALLEL
+    DO_PARALLEL
     for (size_t i = 0; i < output_size; i++) {
         biases[i] = utils::rand_double(); // between -1 and 1;
         for (size_t j = 0; j < input_size; j++) {
@@ -145,19 +250,24 @@ void LinearLayer::initialize_params() noexcept {
 
 std::vector<double> LinearLayer::forward(const std::vector<double>& x) {
     input = x;
-    // DO_PARALLEL
+#ifdef NN_DO_INPLACE
+    _forward(x, output);
+    return output;
+#else
+    DO_PARALLEL
     for (size_t i = 0; i < output_size; i++) {
         double dot_product = utils::vec_dot(weights[i], input);
         output[i] = activation(dot_product + biases[i]);
     }
     return output;
+#endif
 }
 
 void LinearLayer::_forward(const std::vector<double>& x,
                            std::vector<double>& result) {
     input = x;
     result.resize(output_size);
-    // DO_PARALLEL
+    DO_PARALLEL
     for (size_t i = 0; i < output_size; i++) {
         double dot_product = utils::vec_dot(weights[i], input);
         result[i] = activation(dot_product + biases[i]);
@@ -168,23 +278,43 @@ void LinearLayer::_forward(const std::vector<double>& x,
 void LinearLayer::compute_deltas(
     const std::vector<double>& target_deltas,
     const std::vector<std::vector<double>>& next_weights = {}) {
+    static_assert(LSZ_WEIGHT_EXTENSION >= 0);
     // hidden layer
     if (!next_weights.empty()) {
-        // DO_PARALLEL
-        for (size_t i = 0; i < output_size; i++) {
-            double error = 0.0;
-            // this next part is potentially very slow
-            // since the next_weights[j] access will
-            // likely result in a cache miss
-            for (size_t j = 0; j < target_deltas.size(); j++) {
-                error += target_deltas[j] * next_weights[j][i];
+        // this next part is potentially very slow
+        // since the next_weights[j] access will
+        // likely result in a cache miss
+        // hence, branch prior to this based on the
+        // size of next_weights
+        const size_t sz = target_deltas.size();
+        if (next_weights.size() >= LSZ_WEIGHT_EXTENSION) {
+            std::memset(deltas.data(), 0, output_size * sizeof(double));
+            for (size_t j = 0; j < sz; j++) {
+                auto d = target_deltas[j];
+                auto& ref = next_weights[j];
+                for (size_t i = 0; i < output_size; i++) {
+                    deltas[i] += d * ref[i];
+                }
             }
-            deltas[i] = error * derivative(output[i]);
+            DO_PARALLEL
+            for (size_t i = 0; i < output_size; i++) {
+                deltas[i] *= derivative(output[i]);
+            }
+        } else {
+            DO_PARALLEL
+            for (size_t i = 0; i < output_size; i++) {
+                double error = 0.0;
+                for (size_t j = 0; j < sz; j++) {
+                    error += target_deltas[j] * next_weights[j][i];
+                }
+                deltas[i] = error * derivative(output[i]);
+            }
         }
+
     }
     // output layer
     else {
-        // DO_PARALLEL
+        DO_PARALLEL
         for (size_t i = 0; i < output_size; i++) {
             deltas[i] = (output[i] - target_deltas[i]) * derivative(output[i]);
         }
@@ -192,15 +322,8 @@ void LinearLayer::compute_deltas(
 }
 
 void LinearLayer::update_weights(double learning_rate) {
-    // NEW:
-    biases = utils::vec_sub(biases, utils::vec_mult(learning_rate, deltas));
-    // DO_PARALLEL
-    for (size_t i = 0; i < output_size; i++) {
-        weights[i] = utils::vec_sub(
-            weights[i], utils::vec_mult(learning_rate * deltas[i], input));
-    }
-    // OLD:
     /*
+    performs the following operations
     for (size_t i = 0; i < output_size; i++) {
         for (size_t j = 0; j < input_size; j++) {
             weights[i][j] -= learning_rate * deltas[i] * input[j];
@@ -208,6 +331,23 @@ void LinearLayer::update_weights(double learning_rate) {
         biases[i] -= learning_rate * deltas[i];
     }
     */
+#ifdef NN_DO_INPLACE
+    std::vector<double> tmp_o(output_size);
+    std::vector<double> tmp_i(input_size);
+    utils::vec_mult_inplace(learning_rate, deltas, tmp_o);
+    utils::vec_sub_inplace(biases, tmp_o, biases);
+    DO_PARALLEL
+    for (size_t i = 0; i < output_size; i++) {
+        utils::vec_mult_inplace(learning_rate * deltas[i], input, tmp_i);
+        utils::vec_sub_inplace(weights[i], tmp_i, weights[i]);
+    }
+#else
+    biases = utils::vec_sub(biases, utils::vec_mult(learning_rate, deltas));
+    for (size_t i = 0; i < output_size; i++) {
+        weights[i] = utils::vec_sub(
+            weights[i], utils::vec_mult(learning_rate * deltas[i], input));
+    }
+#endif
 }
 
 MLP::MLP(const std::vector<size_t>& szs) {
@@ -224,8 +364,14 @@ MLP::MLP(const std::vector<size_t>& szs, const std::vector<F::Activation>& fs) {
 }
 
 std::vector<double> MLP::forward(const std::vector<double>& x) {
-    std::vector<double> _x(x.size());
+    std::vector<double> _x = x;
+#ifdef NN_DO_INPLACE
     _forward(x, _x);
+#else
+    for (auto& layer : layers) {
+        _x = layer.forward(_x);
+    }
+#endif
     return _x;
 }
 
@@ -240,14 +386,15 @@ void MLP::_forward(const std::vector<double>& x, std::vector<double>& result) {
 double MLP::update(const std::vector<double>& input,
                    const std::vector<double>& target,
                    const double learning_rate) {
-    // auto pred = forward(input);
-    // auto diff = utils::vec_sub(pred, target);
-    // double loss = utils::vec_dot(diff, diff);
-    double loss = 0.0;
+    auto pred = forward(input);
+    auto diff = utils::vec_sub(pred, target);
+    double loss = utils::vec_dot(diff, diff);
+    // double loss = 0.0;
     layers.back().compute_deltas(target);
     for (int l = layers.size() - 2; l >= 0; l--) {
         layers[l].compute_deltas(layers[l + 1].deltas, layers[l + 1].weights);
     }
+    DO_PARALLEL
     for (auto& layer : layers) {
         layer.update_weights(learning_rate);
     }
@@ -260,11 +407,13 @@ void MLP::train(const std::vector<std::vector<double>>& X,
     assert(X.size() == Y.size());
     auto sz = X.size();
     for (int epoch = 0; epoch < epochs; epoch++) {
+        double avg_loss = 0.0;
         for (size_t i = 0; i < sz; i++) {
-            update(X[i], Y[i], learning_rate);
+            avg_loss += update(X[i], Y[i], learning_rate);
         }
+        avg_loss /= sz;
         if (verbose && epoch % (epochs / 10) == 0) {
-            std::cout << "On epoch " << epoch << "\n";
+            std::cout << "On epoch " << epoch << " Loss: " << avg_loss << "\n";
         }
     }
 }
