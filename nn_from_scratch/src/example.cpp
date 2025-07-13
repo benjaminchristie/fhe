@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
@@ -280,110 +281,108 @@ make_data(size_t N_SAMPLES) {
     return {inputs, outputs};
 }
 
-int main() {
-    srand(time(0));
+int main(int argc, char** argv) {
+    assert(argc > 1);
+    int seed = atoi(argv[1]);
+    srand(seed);
 
-    // Example: 2 inputs → 2 hidden → 1 output
     std::vector<int> layer_szs = {INPUT_DIM, 3, 3, OUTPUT_DIM};
     NeuralNetwork nn(layer_szs);
 
     auto [X, Y] = make_data(1000);
 
-    // std::chrono::steady_clock::time_point begin =
-    //     std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point begin =
+        std::chrono::steady_clock::now();
     for (int epoch = 0; epoch < 10000; epoch++) {
         nn.train(X, Y, 10000, 0.001);
 
         if (epoch % 1000 == 0)
             cout << "Epoch " << epoch << "\n";
     }
-    // std::chrono::steady_clock::time_point end =
-    //     std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point end =
+        std::chrono::steady_clock::now();
 
-    // cout << "Training took : "
-    //      << std::chrono::duration_cast<std::chrono::microseconds>(end -
-    //      begin)
-    //             .count()
-    //      << "μs\n";
+    cout << "Training took : "
+         << std::chrono::duration_cast<std::chrono::microseconds>(end - begin)
+                .count()
+         << "μs\n";
 
-    // X.resize(10);
-    // begin = std::chrono::steady_clock::now();
-    // for (const auto& input : X) {
-    //     vector<double> out = nn.predict(input);
-    //     cout << "Input: (";
-    //     for (const auto& in : input) {
-    //         cout << in << ", ";
-    //     }
-    //     cout << ") => Output: (";
-    //     for (const auto& ou : out) {
-    //         cout << ou << ", ";
-    //     }
-    //     cout << ")\n";
-    // }
-    // end = std::chrono::steady_clock::now();
+    X.resize(10);
+    begin = std::chrono::steady_clock::now();
+    for (const auto& input : X) {
+        vector<double> out = nn.predict(input);
+        cout << "Input: (";
+        for (const auto& in : input) {
+            cout << in << ", ";
+        }
+        cout << ") => Output: (";
+        for (const auto& ou : out) {
+            cout << ou << ", ";
+        }
+        cout << ")\n";
+    }
+    end = std::chrono::steady_clock::now();
 
-    // cout << "Standard inference took : "
-    //      << std::chrono::duration_cast<std::chrono::microseconds>(end -
-    //      begin)
-    //             .count()
-    //      << "μs\n";
+    cout << "Standard inference took : "
+         << std::chrono::duration_cast<std::chrono::microseconds>(end - begin)
+                .count()
+         << "μs\n";
 
-    // uint32_t multDepth = 10;
-    // uint32_t scaleModSize = 50;
-    // uint32_t batchSize = 1;
+    uint32_t multDepth = 16;
+    uint32_t scaleModSize = 50;
+    uint32_t batchSize = 1;
 
-    // CCParams<CryptoContextCKKSRNS> parameters;
-    // parameters.SetMultiplicativeDepth(multDepth);
-    // parameters.SetScalingModSize(scaleModSize);
-    // parameters.SetBatchSize(batchSize);
-    // CryptoContext<DCRTPoly> cc = GenCryptoContext(parameters);
-    // cc->Enable(PKE);
-    // cc->Enable(KEYSWITCH);
-    // cc->Enable(LEVELEDSHE);
-    // std::cout << "\nCKKS scheme is using ring dimension "
-    //           << cc->GetRingDimension() << std::endl;
-    // auto keys = cc->KeyGen();
-    // cc->EvalMultKeyGen(keys.secretKey);
-    // cc->EvalRotateKeyGen(keys.secretKey, {1, -2});
-    // FHENeuralNetwork fhenn = FHENeuralNetwork(layer_szs, cc);
-    // for (size_t i = 0; i < fhenn.layers.size(); i++) {
-    //     fhenn.layers[i].weights = nn.layers[i].weights;
-    //     fhenn.layers[i].biases = nn.layers[i].biases;
-    // }
-    // std::cout << "beginning encrypted inference\n";
-    // begin = std::chrono::steady_clock::now();
-    // for (const auto& input : X) {
-    //     vector<FunctionalCiphertext> vs(input.size());
-    //     size_t i = 0;
-    //     for (auto in : input) {
-    //         std::vector<double> _in = {in};
-    //         auto plaintext_input = cc->MakeCKKSPackedPlaintext(_in);
-    //         auto encrypted_input = cc->Encrypt(keys.publicKey,
-    //         plaintext_input); vs[i++] = encrypted_input;
-    //     }
-    //     auto encrypted_output = fhenn.predict(vs, keys.publicKey);
-    //     cout << "Input: (";
-    //     for (const auto& in : input) {
-    //         cout << in << ", ";
-    //     }
-    //     cout << ") => Output: (";
-    //     for (auto out : encrypted_output) {
-    //         Plaintext result;
-    //         cc->Decrypt(keys.secretKey, out, &result);
-    //         result->SetLength(batchSize);
-    //         auto vec = result->GetCKKSPackedValue();
-    //         cout << vec[0].real() << ", ";
-    //     }
-    //     cout << ")\n";
-    // }
+    CCParams<CryptoContextCKKSRNS> parameters;
+    parameters.SetMultiplicativeDepth(multDepth);
+    parameters.SetScalingModSize(scaleModSize);
+    parameters.SetBatchSize(batchSize);
+    CryptoContext<DCRTPoly> cc = GenCryptoContext(parameters);
+    cc->Enable(PKE);
+    cc->Enable(KEYSWITCH);
+    cc->Enable(LEVELEDSHE);
+    std::cout << "\nCKKS scheme is using ring dimension "
+              << cc->GetRingDimension() << std::endl;
+    auto keys = cc->KeyGen();
+    cc->EvalMultKeyGen(keys.secretKey);
+    cc->EvalRotateKeyGen(keys.secretKey, {1, -2});
+    FHENeuralNetwork fhenn = FHENeuralNetwork(layer_szs, cc);
+    for (size_t i = 0; i < fhenn.layers.size(); i++) {
+        fhenn.layers[i].weights = nn.layers[i].weights;
+        fhenn.layers[i].biases = nn.layers[i].biases;
+    }
+    std::cout << "beginning encrypted inference\n";
+    begin = std::chrono::steady_clock::now();
+    for (const auto& input : X) {
+        vector<FunctionalCiphertext> vs(input.size());
+        size_t i = 0;
+        for (auto in : input) {
+            std::vector<double> _in = {in};
+            auto plaintext_input = cc->MakeCKKSPackedPlaintext(_in);
+            auto encrypted_input = cc->Encrypt(keys.publicKey, plaintext_input);
+            vs[i++] = encrypted_input;
+        }
+        auto encrypted_output = fhenn.predict(vs, keys.publicKey);
+        cout << "Input: (";
+        for (const auto& in : input) {
+            cout << in << ", ";
+        }
+        cout << ") => Output: (";
+        for (auto out : encrypted_output) {
+            Plaintext result;
+            cc->Decrypt(keys.secretKey, out, &result);
+            result->SetLength(batchSize);
+            auto vec = result->GetCKKSPackedValue();
+            cout << vec[0].real() << ", ";
+        }
+        cout << ")\n";
+    }
 
-    // end = std::chrono::steady_clock::now();
+    end = std::chrono::steady_clock::now();
 
-    // cout << "\nFHE inference took : "
-    //      << std::chrono::duration_cast<std::chrono::microseconds>(end -
-    //      begin)
-    //             .count()
-    //      << "μs\n";
+    cout << "\nFHE inference took : "
+         << std::chrono::duration_cast<std::chrono::microseconds>(end - begin)
+                .count()
+         << "μs\n";
 
     return 0;
 }
